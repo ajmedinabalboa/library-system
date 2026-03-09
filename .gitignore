@@ -1,0 +1,19 @@
+# Exclude all root-level .md files except README.md
+/*.md
+!/README.md
+
+# Exclude other root-level files
+/build_output.txt
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/coverage/
+frontend/.env*.local
+
+# Backend .NET
+backend/src/**/bin/
+backend/src/**/obj/
+backend/src/**/TestResults/
+backend/src/**/*.user
+backend/src/**/*.suo
