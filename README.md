@@ -1,42 +1,42 @@
-# Digital Library System - Complete Solution
+# Sistema de Biblioteca Digital - Solución Completa
 
-## Project Overview
+## Descripción General del Proyecto
 
-A fullstack Digital Library System built with .NET 10 Web API (backend) and Next.js (frontend), following Clean Architecture principles and modern best practices.
+Un Sistema de Biblioteca Digital fullstack construido con .NET 10 Web API (backend) y Next.js (frontend), siguiendo los principios de Arquitectura Limpia y las mejores prácticas modernas.
 
-## ✅ Backend - COMPLETED
+## ✅ Backend - COMPLETADO
 
-The backend has been fully implemented with Clean Architecture, CQRS, and JWT authentication.
+El backend ha sido completamente implementado con Arquitectura Limpia, CQRS y autenticación JWT.
 
-### Backend Structure
+### Estructura del Backend
 ```
 backend/src/
-├── LibrarySystem.Domain/          ✅ Domain entities
-├── LibrarySystem.Application/     ✅ CQRS commands/queries, DTOs, validators
-├── LibrarySystem.Infrastructure/  ✅ DbContext, repositories, JWT, password hashing
-└── LibrarySystem.WebAPI/          ✅ Controllers, auth, CORS configuration
+├── LibrarySystem.Domain/          ✅ Entidades del dominio
+├── LibrarySystem.Application/     ✅ Comandos/consultas CQRS, DTOs, validadores
+├── LibrarySystem.Infrastructure/  ✅ DbContext, repositorios, JWT, hash de contraseñas
+└── LibrarySystem.WebAPI/          ✅ Controladores, autenticación, configuración CORS
 ```
 
-### Features Implemented
-- ✅ Clean Architecture with 4 layers
-- ✅ CQRS pattern with MediatR
-- ✅ Repository and Unit of Work patterns
-- ✅ JWT authentication with refresh tokens
+### Funcionalidades Implementadas
+- ✅ Arquitectura Limpia con 4 capas
+- ✅ Patrón CQRS con MediatR
+- ✅ Patrones Repositorio y Unidad de Trabajo
+- ✅ Autenticación JWT con tokens de refresco
 - ✅ FluentValidation
-- ✅ Entity Framework Core with PostgreSQL
-- ✅ Comprehensive book management (CRUD)
-- ✅ Advanced filtering, sorting, and pagination
-- ✅ Author management with duplicate prevention
-- ✅ Swagger/OpenAPI documentation
+- ✅ Entity Framework Core con PostgreSQL
+- ✅ Gestión completa de libros (CRUD)
+- ✅ Filtrado avanzado, ordenamiento y paginación
+- ✅ Gestión de autores con prevención de duplicados
+- ✅ Documentación Swagger/OpenAPI
 
-### Running the Backend
+### Ejecutar el Backend
 
-1. **Setup PostgreSQL**:
+1. **Configurar PostgreSQL**:
    ```sql
    CREATE DATABASE librarydb;
    ```
 
-2. **Run Migrations**:
+2. **Ejecutar Migraciones**:
    ```bash
    dotnet ef migrations add InitialCreate \
      --project backend/src/LibrarySystem.Infrastructure \
@@ -47,47 +47,47 @@ backend/src/
      --startup-project backend/src/LibrarySystem.WebAPI
    ```
 
-3. **Run the API**:
+3. **Iniciar la API**:
    ```bash
    cd backend/src/LibrarySystem.WebAPI
    dotnet run
    ```
 
-4. **Access Swagger**: `https://localhost:5001/swagger`
+4. **Acceder a Swagger**: `https://localhost:5001/swagger`
 
-### 🎯 Test Data Included
+### 🎯 Datos de Prueba Incluidos
 
-The database is automatically seeded with test data:
+La base de datos se inicializa automáticamente con datos de prueba:
 
-- **Users:**
+- **Usuarios:**
   - Admin: `admin@library.com` / `Admin123!`
-  - User: `user@library.com` / `User123!`
+  - Usuario: `user@library.com` / `User123!`
 
-- **Books:** 6 classic software engineering books with authors
+- **Libros:** 6 libros clásicos de ingeniería de software con autores
 
-📖 **Details:** See [backend/SEED_DATA.md](./backend/SEED_DATA.md)
+📖 **Detalles:** Ver [backend/SEED_DATA.md](./backend/SEED_DATA.md)
 
-## 📋 Frontend - Next Steps
+## 📋 Frontend - Implementado
 
-The frontend should be implemented with the following structure:
+El frontend ha sido implementado con la siguiente estructura:
 
-### Recommended Folder Structure
+### Estructura de Carpetas
 ```
 frontend/
 ├── app/
 │   ├── (auth)/
 │   │   └──  login/
-│   │       └── page.tsx              # Login page
+│   │       └── page.tsx              # Página de inicio de sesión
 │   ├── (dashboard)/
 │   │   └── books/
-│   │       ├── page.tsx              # Books list page
+│   │       ├── page.tsx              # Página de listado de libros
 │   │       ├── create/
-│   │       │   └── page.tsx          # Create book page
+│   │       │   └── page.tsx          # Página de creación de libro
 │   │       └── [id]/
 │   │           └── edit/
-│   │               └── page.tsx      # Edit book page
-│   ├── layout.tsx                    # Root layout
-│   └── page.tsx                      # Home page
+│   │               └── page.tsx      # Página de edición de libro
+│   ├── layout.tsx                    # Layout raíz
+│   └── page.tsx                      # Página de inicio
 ├── components/
 │   ├── BookCard.tsx
 │   ├── BookList.tsx
@@ -98,9 +98,9 @@ frontend/
 │   └── FilterBar.tsx
 ├── lib/
 │   ├── api/
-│   │   ├── axios.ts                  # Axios configuration with interceptors
-│   │   ├── authService.ts            # Auth API calls
-│   │   └── bookService.ts            # Book API calls
+│   │   ├── axios.ts                  # Configuración de Axios con interceptores
+│   │   ├── authService.ts            # Llamadas a la API de autenticación
+│   │   └── bookService.ts            # Llamadas a la API de libros
 │   ├── hooks/
 │   │   ├── useAuth.ts
 │   │   └── useBooks.ts
@@ -112,28 +112,28 @@ frontend/
 └── next.config.js
 ```
 
-### Setup Frontend
+### Configurar el Frontend
 
-1. **Create Next.js App**:
+1. **Crear la App Next.js**:
    ```bash
    npx create-next-app@latest frontend --typescript --tailwind --app
    cd frontend
    ```
 
-2. **Install Dependencies**:
+2. **Instalar Dependencias**:
    ```bash
    npm install axios
    npm install -D @types/node
    ```
 
-3. **Create Environment Variables** (`.env.local`):
+3. **Crear Variables de Entorno** (`.env.local`):
    ```env
    NEXT_PUBLIC_API_URL=https://localhost:5001/api
    ```
 
-### Key Frontend Files to Implement
+### Archivos Clave del Frontend
 
-#### 1. Axios Configuration (`lib/api/axios.ts`)
+#### 1. Configuración de Axios (`lib/api/axios.ts`)
 ```typescript
 import axios from 'axios';
 
@@ -186,7 +186,7 @@ api.interceptors.response.use(
 export default api;
 ```
 
-#### 2. Auth Service (`lib/api/authService.ts`)
+#### 2. Servicio de Autenticación (`lib/api/authService.ts`)
 ```typescript
 import api from './axios';
 
@@ -219,7 +219,7 @@ export const authService = {
 };
 ```
 
-#### 3. Book Service (`lib/api/bookService.ts`)
+#### 3. Servicio de Libros (`lib/api/bookService.ts`)
 ```typescript
 import api from './axios';
 
@@ -290,7 +290,7 @@ export const bookService = {
 };
 ```
 
-#### 4. Login Page (`app/(auth)/login/page.tsx`)
+#### 4. Página de Inicio de Sesión (`app/(auth)/login/page.tsx`)
 ```typescript
 'use client';
 
@@ -374,7 +374,7 @@ export default function LoginPage() {
 }
 ```
 
-#### 5. Books List Page (`app/(dashboard)/books/page.tsx`)
+#### 5. Página de Listado de Libros (`app/(dashboard)/books/page.tsx`)
 ```typescript
 'use client';
 
@@ -486,49 +486,49 @@ export default function BooksPage() {
 }
 ```
 
-## 🚀 Complete Setup Instructions
+## 🚀 Instrucciones de Configuración Completa
 
-### 1. Backend Setup
+### 1. Configurar el Backend
 ```bash
-# Clone/navigate to project
+# Navegar al proyecto
 cd library-system
 
-# Restore packages
+# Restaurar paquetes
 dotnet restore
 
-# Setup database
+# Configurar la base de datos
 createdb librarydb
 
-# Run migrations
+# Ejecutar migraciones
 dotnet ef database update \
   --project src/LibrarySystem.Infrastructure \
   --startup-project src/LibrarySystem.WebAPI
 
-# Run API
+# Iniciar la API
 cd src/LibrarySystem.WebAPI
 dotnet run
 ```
 
-### 2. Frontend Setup
+### 2. Configurar el Frontend
 ```bash
-# Create Next.js app
+# Crear la app Next.js
 npx create-next-app@latest frontend --typescript --tailwind --app
 cd frontend
 
-# Install dependencies
+# Instalar dependencias
 npm install axios
 
-# Create .env.local
+# Crear .env.local
 echo "NEXT_PUBLIC_API_URL=https://localhost:5001/api" > .env.local
 
-# Run development server
+# Iniciar servidor de desarrollo
 npm run dev
 ```
 
-### 3. Create Test User
+### 3. Crear Usuario de Prueba
 ```sql
--- You'll need to hash the password using ASP.NET Core Identity Password Hasher
--- Or create a seed script in the backend
+-- Es necesario hashear la contraseña usando ASP.NET Core Identity Password Hasher
+-- O crear un script de semilla en el backend
 
 INSERT INTO "Users" ("Id", "Email", "PasswordHash", "Name", "Role", "CreatedAt")
 VALUES (
@@ -541,47 +541,47 @@ VALUES (
 );
 ```
 
-## 📝 API Endpoints Summary
+## 📝 Resumen de Endpoints de la API
 
-| Method | Endpoint | Description | Auth Required |
+| Método | Endpoint | Descripción | Requiere Auth |
 |--------|----------|-------------|---------------|
-| POST | /api/auth/login | Login | No |
-| POST | /api/auth/refresh | Refresh token | No |
-| GET | /api/books | List books (with filters) | Yes |
-| GET | /api/books/{id} | Get book by ID | Yes |
-| POST | /api/books | Create book | Yes |
-| PUT | /api/books/{id} | Update book | Yes |
-| DELETE | /api/books/{id} | Delete book | Yes |
+| POST | /api/auth/login | Iniciar sesión | No |
+| POST | /api/auth/refresh | Refrescar token | No |
+| GET | /api/books | Listar libros (con filtros) | Sí |
+| GET | /api/books/{id} | Obtener libro por ID | Sí |
+| POST | /api/books | Crear libro | Sí |
+| PUT | /api/books/{id} | Actualizar libro | Sí |
+| DELETE | /api/books/{id} | Eliminar libro | Sí |
 
-## 🏗️ Architecture Highlights
+## 🏗️ Aspectos Destacados de la Arquitectura
 
-- ✅  **Clean Architecture**: Clear separation of concerns
-- ✅ **CQRS**: Commands and queries separated
-- ✅ **Repository Pattern**: Data access abstraction
-- ✅ **JWT Authentication**: Secure stateless auth
-- ✅ **Axios Interceptors**: Automatic token refresh
-- ✅ **Type Safety**: Full TypeScript support
-- ✅ **Responsive Design**: Tail windCSS styling
-- ✅ **Feature-based Structure**: Organized by domain
+- ✅  **Arquitectura Limpia**: Clara separación de responsabilidades
+- ✅ **CQRS**: Comandos y consultas separados
+- ✅ **Patrón Repositorio**: Abstracción del acceso a datos
+- ✅ **Autenticación JWT**: Autenticación segura sin estado
+- ✅ **Interceptores Axios**: Renovación automática de tokens
+- ✅ **Tipado Seguro**: Soporte completo de TypeScript
+- ✅ **Diseño Responsivo**: Estilos con TailwindCSS
+- ✅ **Estructura por Funcionalidad**: Organizada por dominio
 
-## 📚 Additional Resources
+## 📚 Recursos Adicionales
 
-- [Backend README](README.backend.md) - Detailed backend documentation
-- [.NET Documentation](https://docs.microsoft.com/en-us/dotnet/)
-- [Next.js Documentation](https://nextjs.org/docs)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [README del Backend](README.backend.md) - Documentación detallada del backend
+- [Documentación de .NET](https://docs.microsoft.com/es-es/dotnet/)
+- [Documentación de Next.js](https://nextjs.org/docs)
+- [Documentación de PostgreSQL](https://www.postgresql.org/docs/)
 
-## 🎯 Next Steps
+## 🎯 Próximos Pasos
 
-1. Implement remaining frontend pages (Create/Edit book)
-2. Add form validation with React Hook Form
-3. Add loading states and error handling
-4. Implement advanced filtering UI
-5. Add unit and integration tests
-6. Set up CI/CD pipeline
-7. Add Docker support
-8. Implement comprehensive logging
+1. Implementar las páginas restantes del frontend (Crear/Editar libro)
+2. Agregar validación de formularios con React Hook Form
+3. Agregar estados de carga y manejo de errores
+4. Implementar una interfaz de filtrado avanzado
+5. Agregar pruebas unitarias e integración
+6. Configurar un pipeline de CI/CD
+7. Agregar soporte para Docker
+8. Implementar logs completos
 
-## 📄 License
+## 📄 Licencia
 
-This project was created for demonstration purposes.
+Este proyecto fue creado con fines de demostración.
