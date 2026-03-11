@@ -20,9 +20,11 @@ public class AuthorRepository : Repository<Author>, IAuthorRepository
 
     /// <summary>
     /// Finds an author by exact name using a <b>database-side</b>
-    /// case-insensitive comparison (<c>ILIKE</c>), avoiding the previous
-    /// pattern of <c>.ToLower()</c> which could evaluate in memory depending
-    /// on the EF provider configuration.
+    /// case-insensitive comparison. <c>ILIKE 'name'</c> (without wildcards)
+    /// behaves as an exact case-insensitive equality check in PostgreSQL,
+    /// which is both correct and more performant than the previous
+    /// <c>.ToLower()</c> pattern that could force an in-memory evaluation
+    /// depending on the EF provider configuration.
     /// </summary>
     public async Task<Author?> GetByNameAsync(string name)
     {
