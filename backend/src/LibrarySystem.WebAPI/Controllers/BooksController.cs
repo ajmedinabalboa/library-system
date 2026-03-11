@@ -7,6 +7,14 @@ using LibrarySystem.Application.Queries.Books;
 
 namespace LibrarySystem.WebAPI.Controllers;
 
+/// <summary>
+/// REST API for book management.
+///
+/// Clean Architecture: all requests are dispatched through MediatR so the
+/// controller acts purely as a thin HTTP adapter (SOLID – SRP).
+/// Exception handling is delegated to <c>GlobalExceptionHandlerMiddleware</c>
+/// (no scattered try/catch blocks needed here).
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -20,6 +28,8 @@ public class BooksController : ControllerBase
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(PaginatedResult<BookDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<PaginatedResult<BookDto>>> GetBooks(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
@@ -49,10 +59,12 @@ public class BooksController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<BookDto>> GetBookById(Guid id)
     {
-        var query = new GetBookByIdQuery { Id = id };
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(new GetBookByIdQuery { Id = id });
 
         if (result == null)
         {
@@ -64,73 +76,61 @@ public class BooksController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(BookDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<BookDto>> CreateBook([FromBody] CreateBookDto dto)
     {
-        try
+        var command = new CreateBookCommand
         {
-            var command = new CreateBookCommand
-            {
-                Title = dto.Title,
-                PublicationDate = dto.PublicationDate,
-                Authors = dto.Authors
-            };
+            Title = dto.Title,
+            PublicationDate = dto.PublicationDate,
+            Authors = dto.Authors
+        };
 
-            var result = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetBookById), new { id = result.Id }, result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetBookById), new { id = result.Id }, result);
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(BookDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<BookDto>> UpdateBook(Guid id, [FromBody] UpdateBookDto dto)
     {
-        try
+        var command = new UpdateBookCommand
         {
-            var command = new UpdateBookCommand
-            {
-                Id = id,
-                Title = dto.Title,
-                PublicationDate = dto.PublicationDate,
-                Authors = dto.Authors
-            };
+            Id = id,
+            Title = dto.Title,
+            PublicationDate = dto.PublicationDate,
+            Authors = dto.Authors
+        };
 
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult> DeleteBook(Guid id)
     {
-        try
-        {
-            var command = new DeleteBookCommand { Id = id };
-            var result = await _mediator.Send(command);
+        var result = await _mediator.Send(new DeleteBookCommand { Id = id });
 
-            if (!result)
-            {
-                return NotFound(new { message = $"Book with ID {id} not found" });
-            }
-
-            return NoContent();
-        }
-        catch (Exception ex)
+        if (!result)
         {
-            return BadRequest(new { message = ex.Message });
+            return NotFound(new { message = $"Book with ID {id} not found" });
         }
+
+        return NoContent();
     }
 }
+
 

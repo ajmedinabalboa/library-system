@@ -1,121 +1,100 @@
 using System.Text;
-using System.Reflection;
-using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using LibrarySystem.Application;
 using LibrarySystem.Infrastructure;
 using LibrarySystem.Infrastructure.Persistence;
+using LibrarySystem.WebAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// ── Presentation layer ──────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(
-    Assembly.Load("LibrarySystem.Application")));
+// ── Application layer (CQRS, validators, pipeline behaviors, AutoMapper) ────
+// DRY: delegates to the AddApplication() extension method defined in
+// LibrarySystem.Application so that registrations are not duplicated here.
+builder.Services.AddApplication();
 
-// Add FluentValidation
-builder.Services.AddValidatorsFromAssembly(
-    Assembly.Load("LibrarySystem.Application"));
+// ── Infrastructure layer (DB context, repositories, auth services) ──────────
+// DRY: delegates to the AddInfrastructure() extension method defined in
+// LibrarySystem.Infrastructure.
+builder.Services.AddInfrastructure(builder.Configuration);
 
-// Database
-builder.Services.AddDbContext<LibrarySystem.Infrastructure.Persistence.ApplicationDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+// ── JWT Authentication ───────────────────────────────────────────────────────
+var jwtKey      = builder.Configuration["Jwt:Key"]      ?? throw new InvalidOperationException("JWT Key not configured");
+var jwtIssuer   = builder.Configuration["Jwt:Issuer"]   ?? throw new InvalidOperationException("JWT Issuer not configured");
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured");
 
-builder.Services.AddScoped<LibrarySystem.Application.Interfaces.IDbContext>(provider =>
-    provider.GetRequiredService<LibrarySystem.Infrastructure.Persistence.ApplicationDbContext>());
-
-// Repositories
-builder.Services.AddScoped<LibrarySystem.Application.Interfaces.IBookRepository,
-    LibrarySystem.Infrastructure.Repositories.BookRepository>();
-builder.Services.AddScoped<LibrarySystem.Application.Interfaces.IAuthorRepository,
-    LibrarySystem.Infrastructure.Repositories.AuthorRepository>();
-builder.Services.AddScoped<LibrarySystem.Application.Interfaces.IUnitOfWork,
-    LibrarySystem.Infrastructure.Repositories.UnitOfWork>();
-
-// Authentication
-builder.Services.AddScoped<LibrarySystem.Application.Interfaces.IJwtTokenGenerator,
-    LibrarySystem.Infrastructure.Authentication.JwtTokenGenerator>();
-builder.Services.AddScoped<LibrarySystem.Application.Interfaces.IPasswordHasher,
-    LibrarySystem.Infrastructure.Authentication.PasswordHasher>();
-
-// Configure JWT Authentication
-var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured");
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audence not configured");
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+builder.Services
+    .AddAuthentication(options =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtIssuer,
-        ValidAudience = jwtAudience,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
-    };
-});
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer           = true,
+            ValidateAudience         = true,
+            ValidateLifetime         = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer              = jwtIssuer,
+            ValidAudience            = jwtAudience,
+            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
 
 builder.Services.AddAuthorization();
 
-// Configure CORS
+// ── CORS ─────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
-    {
         policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials();
-    });
+              .AllowCredentials());
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Global exception handler must be registered first in the middleware pipeline
+// so that every downstream exception is caught and converted to a structured
+// JSON response (SRP – controllers stay free of try/catch blocks).
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
 app.UseHttpsRedirection();
-
 app.UseCors("AllowFrontend");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
-// Seed the database
+// ── Database seeding ─────────────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
-    var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await DatabaseSeeder.SeedAsync(context);
     }
     catch (Exception ex)
     {
-        var logger = services.GetRequiredService<ILogger<Program>>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
 
 app.Run();
+
 

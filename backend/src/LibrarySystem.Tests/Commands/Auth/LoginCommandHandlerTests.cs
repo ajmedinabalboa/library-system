@@ -1,4 +1,5 @@
 using LibrarySystem.Application.Commands.Auth;
+using LibrarySystem.Domain.Exceptions;
 
 namespace LibrarySystem.Tests.Commands.Auth;
 
@@ -64,19 +65,19 @@ public class LoginCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_UserNotFound_ThrowsUnauthorizedAccessException()
+    public async Task Handle_UserNotFound_ThrowsInvalidCredentialsException()
     {
         // Arrange
         await using var context = TestDbContext.Create();
         var command = new LoginCommand { Email = "ghost@example.com", Password = "password" };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        // Act & Assert – domain exception replaces generic UnauthorizedAccessException
+        await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => CreateHandler(context).Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_WrongPassword_ThrowsUnauthorizedAccessException()
+    public async Task Handle_WrongPassword_ThrowsInvalidCredentialsException()
     {
         // Arrange
         await using var context = TestDbContext.Create();
@@ -89,7 +90,7 @@ public class LoginCommandHandlerTests
         var command = new LoginCommand { Email = "user@example.com", Password = "wrong" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => CreateHandler(context).Handle(command, CancellationToken.None));
     }
 
@@ -107,7 +108,7 @@ public class LoginCommandHandlerTests
         var command = new LoginCommand { Email = "user@example.com", Password = "wrong" };
 
         // Act
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => CreateHandler(context).Handle(command, CancellationToken.None));
 
         // Assert

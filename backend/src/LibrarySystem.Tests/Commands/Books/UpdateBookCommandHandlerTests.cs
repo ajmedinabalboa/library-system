@@ -1,8 +1,17 @@
+using AutoMapper;
 using LibrarySystem.Application.Commands.Books;
+using LibrarySystem.Application.Mappings;
+using LibrarySystem.Domain.Exceptions;
+using Microsoft.Extensions.Logging.Abstractions;
 namespace LibrarySystem.Tests.Commands.Books;
 
 public class UpdateBookCommandHandlerTests
 {
+    private static IMapper CreateMapper() =>
+        new Mapper(new MapperConfiguration(
+            cfg => cfg.AddProfile<BookMappingProfile>(),
+            NullLoggerFactory.Instance));
+
     private static async Task<(TestDbContext context, Book book)> SeedBookAsync(
         string title = "Original Title",
         string authorName = "Original Author")
@@ -47,7 +56,7 @@ public class UpdateBookCommandHandlerTests
         };
 
         // Act
-        var result = await new UpdateBookCommandHandler(context, authorMock.Object).Handle(command, CancellationToken.None);
+        var result = await new UpdateBookCommandHandler(context, authorMock.Object, CreateMapper()).Handle(command, CancellationToken.None);
 
         // Assert
         Assert.Equal("New Title", result.Title);
@@ -69,7 +78,7 @@ public class UpdateBookCommandHandlerTests
         };
 
         // Act
-        var result = await new UpdateBookCommandHandler(context, authorMock.Object).Handle(command, CancellationToken.None);
+        var result = await new UpdateBookCommandHandler(context, authorMock.Object, CreateMapper()).Handle(command, CancellationToken.None);
 
         // Assert
         Assert.Single(result.Authors);
@@ -93,7 +102,7 @@ public class UpdateBookCommandHandlerTests
         };
 
         // Act
-        var result = await new UpdateBookCommandHandler(context, authorMock.Object).Handle(command, CancellationToken.None);
+        var result = await new UpdateBookCommandHandler(context, authorMock.Object, CreateMapper()).Handle(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(result.UpdatedAt);
@@ -117,7 +126,7 @@ public class UpdateBookCommandHandlerTests
         };
 
         // Act
-        var result = await new UpdateBookCommandHandler(context, authorMock.Object).Handle(command, CancellationToken.None);
+        var result = await new UpdateBookCommandHandler(context, authorMock.Object, CreateMapper()).Handle(command, CancellationToken.None);
 
         // Assert
         Assert.NotNull(result.PublicationDate);
@@ -125,22 +134,25 @@ public class UpdateBookCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistingBook_ThrowsKeyNotFoundException()
+    public async Task Handle_NonExistingBook_ThrowsBookNotFoundException()
     {
         // Arrange
         await using var context = TestDbContext.Create();
         var authorMock = new Mock<IAuthorRepository>();
 
+        var missingId = Guid.NewGuid();
         var command = new UpdateBookCommand
         {
-            Id = Guid.NewGuid(),
+            Id = missingId,
             Title = "Ghost Book",
             Authors = new List<string> { "Author" }
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => new UpdateBookCommandHandler(context, authorMock.Object).Handle(command, CancellationToken.None));
+        // Act & Assert – domain exception replaces generic KeyNotFoundException
+        var ex = await Assert.ThrowsAsync<BookNotFoundException>(
+            () => new UpdateBookCommandHandler(context, authorMock.Object, CreateMapper()).Handle(command, CancellationToken.None));
+
+        Assert.Equal(missingId, ex.BookId);
     }
 
     [Fact]
@@ -165,7 +177,7 @@ public class UpdateBookCommandHandlerTests
         };
 
         // Act
-        await new UpdateBookCommandHandler(context, authorMock.Object).Handle(command, CancellationToken.None);
+        await new UpdateBookCommandHandler(context, authorMock.Object, CreateMapper()).Handle(command, CancellationToken.None);
 
         // Assert
         authorMock.Verify(r => r.AddAsync(It.IsAny<Author>()), Times.Never);
