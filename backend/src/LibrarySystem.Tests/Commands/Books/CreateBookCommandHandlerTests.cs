@@ -1,8 +1,20 @@
+using AutoMapper;
 using LibrarySystem.Application.Commands.Books;
+using LibrarySystem.Application.Mappings;
+using Microsoft.Extensions.Logging.Abstractions;
 namespace LibrarySystem.Tests.Commands.Books;
 
 public class CreateBookCommandHandlerTests
 {
+    /// <summary>
+    /// Creates a real AutoMapper instance configured with the application
+    /// mapping profile, matching how the DI container sets it up in production.
+    /// </summary>
+    private static IMapper CreateMapper() =>
+        new Mapper(new MapperConfiguration(
+            cfg => cfg.AddProfile<BookMappingProfile>(),
+            NullLoggerFactory.Instance));
+
     /// <summary>
     /// Creates a mock author repository wired to the given context so that
     /// AddAsync actually persists the author into the in-memory store.
@@ -24,7 +36,7 @@ public class CreateBookCommandHandlerTests
         // Arrange
         await using var context = TestDbContext.Create();
         var authorMock = CreateAuthorRepoMock(context);
-        var handler = new CreateBookCommandHandler(context, authorMock.Object);
+        var handler = new CreateBookCommandHandler(context, authorMock.Object, CreateMapper());
 
         var command = new CreateBookCommand
         {
@@ -55,7 +67,7 @@ public class CreateBookCommandHandlerTests
         var authorMock = new Mock<IAuthorRepository>();
         authorMock.Setup(r => r.GetByNameAsync("Martin Fowler")).ReturnsAsync(existing);
 
-        var handler = new CreateBookCommandHandler(context, authorMock.Object);
+        var handler = new CreateBookCommandHandler(context, authorMock.Object, CreateMapper());
         var command = new CreateBookCommand
         {
             Title = "Refactoring",
@@ -77,7 +89,7 @@ public class CreateBookCommandHandlerTests
         // Arrange
         await using var context = TestDbContext.Create();
         var authorMock = CreateAuthorRepoMock(context);
-        var handler = new CreateBookCommandHandler(context, authorMock.Object);
+        var handler = new CreateBookCommandHandler(context, authorMock.Object, CreateMapper());
 
         var command = new CreateBookCommand
         {
@@ -99,7 +111,7 @@ public class CreateBookCommandHandlerTests
         // Arrange
         await using var context = TestDbContext.Create();
         var authorMock = CreateAuthorRepoMock(context);
-        var handler = new CreateBookCommandHandler(context, authorMock.Object);
+        var handler = new CreateBookCommandHandler(context, authorMock.Object, CreateMapper());
 
         var command = new CreateBookCommand
         {
@@ -124,7 +136,7 @@ public class CreateBookCommandHandlerTests
         // Arrange
         await using var context = TestDbContext.Create();
         var authorMock = CreateAuthorRepoMock(context);
-        var handler = new CreateBookCommandHandler(context, authorMock.Object);
+        var handler = new CreateBookCommandHandler(context, authorMock.Object, CreateMapper());
 
         var command = new CreateBookCommand
         {
@@ -148,7 +160,7 @@ public class CreateBookCommandHandlerTests
         // Arrange
         await using var context = TestDbContext.Create();
         var authorMock = CreateAuthorRepoMock(context);
-        var handler = new CreateBookCommandHandler(context, authorMock.Object);
+        var handler = new CreateBookCommandHandler(context, authorMock.Object, CreateMapper());
 
         var command = new CreateBookCommand { Title = "Persisted Book", Authors = new List<string> { "Author" } };
 

@@ -3,9 +3,23 @@ using Microsoft.EntityFrameworkCore;
 using LibrarySystem.Application.DTOs;
 using LibrarySystem.Application.Interfaces;
 using LibrarySystem.Domain.Entities;
+using LibrarySystem.Domain.Exceptions;
 
 namespace LibrarySystem.Application.Commands.Auth;
 
+/// <summary>
+/// Handles the <see cref="LoginCommand"/>.
+///
+/// Design patterns applied:
+/// - <b>CQRS</b>: write-side command handler that authenticates a user and
+///   issues JWT tokens.
+/// - <b>SOLID – DIP</b>: depends on <see cref="IDbContext"/>,
+///   <see cref="IJwtTokenGenerator"/>, and <see cref="IPasswordHasher"/>
+///   abstractions.
+/// - Throws <see cref="InvalidCredentialsException"/> (domain exception) for
+///   meaningful error semantics instead of the generic
+///   <see cref="UnauthorizedAccessException"/>.
+/// </summary>
 public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDto>
 {
     private readonly IDbContext _context;
@@ -29,28 +43,27 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponseDt
 
         if (user == null || !_passwordHasher.VerifyPassword(user.PasswordHash, request.Password))
         {
-            throw new UnauthorizedAccessException("Invalid email or password");
+            throw new InvalidCredentialsException("Invalid email or password.");
         }
 
         var accessToken = _jwtTokenGenerator.GenerateAccessToken(user);
         var refreshToken = _jwtTokenGenerator.GenerateRefreshToken();
 
-        var refreshTokenEntity = new RefreshToken
+        _context.RefreshTokens.Add(new RefreshToken
         {
             UserId = user.Id,
             Token = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddDays(7),
             Revoked = false
-        };
+        });
 
-        _context.RefreshTokens.Add(refreshTokenEntity);
         await _context.SaveChangesAsync(cancellationToken);
 
         return new LoginResponseDto
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresIn = 3600 // 1 hour
+            ExpiresIn = 3600
         };
     }
 }

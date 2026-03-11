@@ -1,4 +1,6 @@
 using LibrarySystem.Application.Commands.Auth;
+using LibrarySystem.Domain.Exceptions;
+
 namespace LibrarySystem.Tests.Commands.Auth;
 
 public class RefreshTokenCommandHandlerTests
@@ -92,7 +94,7 @@ public class RefreshTokenCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_RevokedToken_ThrowsUnauthorizedAccessException()
+    public async Task Handle_RevokedToken_ThrowsInvalidCredentialsException()
     {
         // Arrange
         var (context, _, _) = await SeedTokenAsync("revoked_rt", revoked: true);
@@ -100,13 +102,13 @@ public class RefreshTokenCommandHandlerTests
 
         var command = new RefreshTokenCommand { RefreshToken = "revoked_rt" };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        // Act & Assert – domain exception replaces generic UnauthorizedAccessException
+        await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => CreateHandler(context).Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_ExpiredToken_ThrowsUnauthorizedAccessException()
+    public async Task Handle_ExpiredToken_ThrowsInvalidCredentialsException()
     {
         // Arrange
         var (context, _, _) = await SeedTokenAsync("expired_rt", expiresInDays: -1);
@@ -115,19 +117,19 @@ public class RefreshTokenCommandHandlerTests
         var command = new RefreshTokenCommand { RefreshToken = "expired_rt" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => CreateHandler(context).Handle(command, CancellationToken.None));
     }
 
     [Fact]
-    public async Task Handle_NonExistentToken_ThrowsUnauthorizedAccessException()
+    public async Task Handle_NonExistentToken_ThrowsInvalidCredentialsException()
     {
         // Arrange
         await using var context = TestDbContext.Create();
         var command = new RefreshTokenCommand { RefreshToken = "does_not_exist" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+        await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => CreateHandler(context).Handle(command, CancellationToken.None));
     }
 }

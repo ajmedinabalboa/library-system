@@ -1,20 +1,40 @@
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using LibrarySystem.Application.DTOs;
 using LibrarySystem.Application.Interfaces;
 using LibrarySystem.Domain.Entities;
+using LibrarySystem.Domain.Exceptions;
 
 namespace LibrarySystem.Application.Commands.Books;
 
+/// <summary>
+/// Handles the <see cref="UpdateBookCommand"/>.
+///
+/// Design patterns applied:
+/// - <b>CQRS</b>: command handler with a clear write-side responsibility.
+/// - <b>SOLID – SRP</b>: handles only book updates; mapping is delegated to
+///   AutoMapper (<see cref="Mappings.BookMappingProfile"/>).
+/// - <b>SOLID – DIP</b>: depends on abstractions (<see cref="IDbContext"/>,
+///   <see cref="IAuthorRepository"/>, <see cref="IMapper"/>).
+/// - Throws <see cref="BookNotFoundException"/> (domain exception) instead of
+///   the generic <see cref="KeyNotFoundException"/> for meaningful error semantics.
+/// </summary>
 public class UpdateBookCommandHandler : IRequestHandler<UpdateBookCommand, BookDto>
 {
     private readonly IDbContext _context;
     private readonly IAuthorRepository _authorRepository;
+    private readonly IMapper _mapper;
 
-    public UpdateBookCommandHandler(IDbContext context, IAuthorRepository authorRepository)
+    public UpdateBookCommandHandler(
+        IDbContext context,
+        IAuthorRepository authorRepository,
+        IMapper mapper)
     {
         _context = context;
         _authorRepository = authorRepository;
+        _mapper = mapper;
     }
 
     public async Task<BookDto> Handle(UpdateBookCommand request, CancellationToken cancellationToken)
@@ -25,7 +45,7 @@ public class UpdateBookCommandHandler : IRequestHandler<UpdateBookCommand, BookD
 
         if (book == null)
         {
-            throw new KeyNotFoundException($"Book with ID {request.Id} not found");
+            throw new BookNotFoundException(request.Id);
         }
 
         // Update book properties
@@ -56,35 +76,19 @@ public class UpdateBookCommandHandler : IRequestHandler<UpdateBookCommand, BookD
                 await _authorRepository.AddAsync(author);
             }
 
-            var bookAuthor = new BookAuthor
+            _context.BookAuthors.Add(new BookAuthor
             {
                 BookId = book.Id,
                 AuthorId = author.Id
-            };
-
-            _context.BookAuthors.Add(bookAuthor);
+            });
         }
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        // Return DTO
-        var bookDto = await _context.Books
+        // Project directly in the DB query using AutoMapper (DRY – replaces manual Select)
+        return await _context.Books
             .Where(b => b.Id == book.Id)
-            .Select(b => new BookDto
-            {
-                Id = b.Id,
-                Title = b.Title,
-                PublicationDate = b.PublicationDate,
-                CreatedAt = b.CreatedAt,
-                UpdatedAt = b.UpdatedAt,
-                Authors = b.BookAuthors.Select(ba => new AuthorDto
-                {
-                    Id = ba.Author.Id,
-                    Name = ba.Author.Name
-                }).ToList()
-            })
+            .ProjectTo<BookDto>(_mapper.ConfigurationProvider)
             .FirstAsync(cancellationToken);
-
-        return bookDto;
     }
 }
